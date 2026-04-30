@@ -1,5 +1,7 @@
-aiogram==3.13.0
-openai>=1.0.0
-google-generativeai>=0.7.0
-aiohttp>=3.9.0
-
+aiogram
+groq
+google-generativeai
+deep-translator
+python-dotenv
+aiohttp
+requests
