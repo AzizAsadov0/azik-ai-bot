@@ -1,7 +1,15 @@
 from aiogram.types import (
+
     InlineKeyboardMarkup,
-    InlineKeyboardButton
+
+    InlineKeyboardButton,
+
+    WebAppInfo
+
 )
+
+
+WEB_APP_URL = "https://azizasadov935-hue.github.io/AzizjonAsaodov/"
 
 
 def main_menu_kb():
@@ -38,8 +46,6 @@ def main_menu_kb():
 
             ],
 
-
-
             [
 
                 InlineKeyboardButton(
@@ -54,6 +60,22 @@ def main_menu_kb():
                 InlineKeyboardButton(
                     text="💬 AI Chat",
                     callback_data="mode:chat"
+                )
+
+            ],
+
+            [
+
+                InlineKeyboardButton(
+
+                    text="🌐 Open App",
+
+                    web_app=WebAppInfo(
+
+                        url=WEB_APP_URL
+
+                    )
+
                 )
 
             ]
@@ -75,7 +97,7 @@ def subscription_kb(
 
             InlineKeyboardButton(
 
-                text=f"🔗 {ch['name']}",
+                text=f"📢 {ch['name']}",
 
                 url=ch["link"]
 
@@ -83,22 +105,21 @@ def subscription_kb(
 
         ])
 
+
     buttons.append([
 
         InlineKeyboardButton(
             text="✅ Tekshirish",
             callback_data="check_sub"
-        ),
-
-        InlineKeyboardButton(
-            text="⏭ O'tkazib yuborish",
-            callback_data="skip_sub"
         )
 
     ])
 
+
     return InlineKeyboardMarkup(
+
         inline_keyboard=buttons
+
     )
 
 
@@ -139,31 +160,17 @@ def admin_menu_kb():
                 ),
 
                 InlineKeyboardButton(
-                    text="👤 Foydalanuvchilar",
-                    callback_data="admin:users"
+                    text="📢 Broadcast",
+                    callback_data="admin:broadcast"
                 )
 
             ],
 
             [
-
-                InlineKeyboardButton(
-                    text="📢 Broadcast",
-                    callback_data="admin:broadcast"
-                ),
 
                 InlineKeyboardButton(
                     text="📡 Kanallar",
                     callback_data="admin:channels"
-                )
-
-            ],
-
-            [
-
-                InlineKeyboardButton(
-                    text="⚙️ Sozlamalar",
-                    callback_data="admin:settings"
                 )
 
             ]
@@ -195,6 +202,7 @@ def admin_back_kb():
 
     )
 
+
 def channels_manage_kb(
     channels
 ):
@@ -215,6 +223,7 @@ def channels_manage_kb(
 
         ])
 
+
     buttons.append([
 
         InlineKeyboardButton(
@@ -226,6 +235,7 @@ def channels_manage_kb(
         )
 
     ])
+
 
     buttons.append([
 
@@ -239,55 +249,9 @@ def channels_manage_kb(
 
     ])
 
+
     return InlineKeyboardMarkup(
 
         inline_keyboard=buttons
-
-    )
-
-
-def settings_kb():
-
-    return InlineKeyboardMarkup(
-
-        inline_keyboard=[
-
-            [
-
-                InlineKeyboardButton(
-
-                    text="✏️ Welcome Text",
-
-                    callback_data="settings:welcome"
-
-                )
-
-            ],
-
-            [
-
-                InlineKeyboardButton(
-
-                    text="✏️ Subscription Text",
-
-                    callback_data="settings:sub"
-
-                )
-
-            ],
-
-            [
-
-                InlineKeyboardButton(
-
-                    text="🔙 Orqaga",
-
-                    callback_data="admin:back"
-
-                )
-
-            ]
-
-        ]
 
     )

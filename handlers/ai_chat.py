@@ -1,3 +1,4 @@
+```python id="aichatv2"
 from aiogram import Router, F
 
 from aiogram.types import (
@@ -24,35 +25,37 @@ from keyboards.main_kb import (
     subscription_kb
 )
 
-from services.ai_service import (
-    get_ai_response
-)
-
 from services.subscription import (
     check_subscription
+)
+
+from services.ai_service import (
+    get_ai_response
 )
 
 from services.translate_service import (
     smart_translate
 )
 
-
 router = Router()
+
+
+MAX_HISTORY = 10
 
 
 MODE_LABELS = {
 
     "ad": "📝 Reklama",
 
-    "content": "🔥 Viral G'oya",
-
-    "translate": "🌍 Tarjima",
+    "content": "🔥 Kontent G'oya",
 
     "script": "🎬 Video Script",
 
     "chat": "💬 AI Chat",
 
     "prompt": "🧠 Prompt Generator",
+
+    "translate": "🌍 Tarjima"
 
 }
 
@@ -72,17 +75,18 @@ MODE_PROMPTS = {
         "💬 Savolingizni yozing:",
 
     "prompt":
-        "🧠 Prompt uchun idea yozing:",
+        "🧠 Prompt uchun idea yozing:"
 
 }
 
 
-MAX_HISTORY_PAIRS = 10
-
-
 class AIState(StatesGroup):
 
-    waiting_for_input = State()
+    waiting_message = State()
+
+    waiting_translate_language = State()
+
+    waiting_translate_text = State()
 
 
 @router.callback_query(
@@ -107,11 +111,9 @@ async def choose_mode(
 
     )
 
-    bot = callback.bot
+    is_subscribed, not_subscribed = await check_subscription(
 
-    is_subscribed, not_subbed = await check_subscription(
-
-        bot,
+        callback.bot,
 
         user.id
 
@@ -125,34 +127,27 @@ async def choose_mode(
 
         await callback.message.edit_text(
 
-            f"⚠️ Obuna bo'ling:\n\n{sub_text}",
+            f"⚠️ {sub_text}",
 
             reply_markup=subscription_kb(
-                not_subbed
+                not_subscribed
             )
 
         )
 
         return
 
+
     mode = callback.data.split(":")[1]
+
+    await state.clear()
 
 
     if mode == "translate":
 
         await state.set_state(
-            AIState.waiting_for_input
-        )
 
-        await state.update_data(
-
-            mode="translate",
-
-            processing=False,
-
-            history=[],
-
-            waiting_language=True
+            AIState.waiting_translate_language
 
         )
 
@@ -183,13 +178,19 @@ async def choose_mode(
                 [
 
                     InlineKeyboardButton(
+
                         text="🇺🇿 Uzbek",
-                        callback_data="promptlang:uz"
+
+                        callback_data="prompt_lang:uz"
+
                     ),
 
                     InlineKeyboardButton(
+
                         text="🇺🇸 English",
-                        callback_data="promptlang:en"
+
+                        callback_data="prompt_lang:en"
+
                     )
 
                 ]
@@ -200,8 +201,7 @@ async def choose_mode(
 
         await callback.message.edit_text(
 
-            "🧠 Prompt Generator\n\n"
-            "Tilni tanlang:",
+            "🧠 Prompt tilini tanlang:",
 
             reply_markup=kb
 
@@ -211,14 +211,12 @@ async def choose_mode(
 
 
     await state.set_state(
-        AIState.waiting_for_input
+        AIState.waiting_message
     )
 
     await state.update_data(
 
         mode=mode,
-
-        processing=False,
 
         history=[]
 
@@ -237,16 +235,18 @@ async def choose_mode(
 
 
 @router.callback_query(
-    F.data.startswith("promptlang:")
+    F.data.startswith(
+        "prompt_lang:"
+    )
 )
-async def prompt_language(
+async def choose_prompt_language(
     callback: CallbackQuery,
     state: FSMContext
 ):
 
     lang = callback.data.split(":")[1]
 
-    selected = (
+    language = (
 
         "Uzbek"
 
@@ -257,46 +257,119 @@ async def prompt_language(
     )
 
     await state.set_state(
-        AIState.waiting_for_input
+        AIState.waiting_message
     )
 
     await state.update_data(
 
         mode="prompt",
 
-        prompt_language=selected,
-
-        processing=False,
+        prompt_language=language,
 
         history=[]
 
     )
 
-    await callback.message.answer(
+    await callback.message.edit_text(
 
-        f"✅ Til: {selected}\n\n"
+        f"✅ Til: {language}\n\n"
 
-        "Endi idea yozing."
+        "Endi idea yozing.",
+
+        reply_markup=back_to_menu_kb()
 
     )
 
 
 @router.message(
-    AIState.waiting_for_input
+    AIState.waiting_translate_language
 )
-async def handle_ai_input(
+async def get_translate_language(
+    message: Message,
+    state: FSMContext
+):
+
+    await state.update_data(
+
+        translate_language=message.text
+
+    )
+
+    await state.set_state(
+
+        AIState.waiting_translate_text
+
+    )
+
+    await message.answer(
+
+        "✍️ Endi tarjima qilinadigan matnni yuboring.",
+
+        reply_markup=back_to_menu_kb()
+
+    )
+
+
+@router.message(
+    AIState.waiting_translate_text
+)
+async def translate_text(
     message: Message,
     state: FSMContext
 ):
 
     data = await state.get_data()
 
-    if data.get("processing"):
-        return
-
-    await state.update_data(
-        processing=True
+    language = data.get(
+        "translate_language"
     )
+
+    wait = await message.answer(
+        "⏳ Tarjima qilinmoqda..."
+    )
+
+    try:
+
+        response = await smart_translate(
+
+            message.text,
+
+            language
+
+        )
+
+        await wait.delete()
+
+        await message.answer(
+
+            f"<b>🌍 Tarjima</b>\n\n"
+
+            f"<pre>{response}</pre>",
+
+            parse_mode="HTML",
+
+            reply_markup=back_to_menu_kb()
+
+        )
+
+    except Exception as e:
+
+        await wait.edit_text(
+
+            f"❌ Xatolik:\n{e}"
+
+        )
+
+
+@router.message(
+    AIState.waiting_message
+)
+async def ai_message(
+    message: Message,
+    state: FSMContext
+):
+
+    data = await state.get_data()
 
     mode = data.get(
         "mode",
@@ -308,115 +381,50 @@ async def handle_ai_input(
         []
     )
 
-    thinking = await message.answer(
-        "⏳ Tayyorlanmoqda..."
+    wait = await message.answer(
+        "⏳ AI o'ylamoqda..."
     )
 
     try:
 
+        user_prompt = message.text
 
-        if mode == "translate":
 
-            waiting_language = data.get(
-                "waiting_language",
-                False
+        if mode == "prompt":
+
+            language = data.get(
+
+                "prompt_language",
+
+                "English"
+
             )
 
-            if waiting_language:
+            user_prompt = f"""
 
-                await state.update_data(
+Create this in {language}
 
-                    translate_target=
-                    message.text,
-
-                    waiting_language=False,
-
-                    waiting_text=True,
-
-                    processing=False
-
-                )
-
-                await thinking.delete()
-
-                await message.answer(
-
-                    "✍️ Endi tarjima qilinadigan "
-                    "matnni yuboring."
-
-                )
-
-                return
-
-
-            waiting_text = data.get(
-                "waiting_text",
-                False
-            )
-
-            if waiting_text:
-
-                target_language = data.get(
-                    "translate_target",
-                    "English"
-                )
-
-                response = await smart_translate(
-
-                    message.text,
-
-                    target_language
-
-                )
-
-                await state.update_data(
-                    processing=False
-                )
-
-            else:
-
-                response = (
-                    "❌ Tarjima xatosi."
-                )
-
-
-        else:
-
-            if mode == "prompt":
-
-                language = data.get(
-                    "prompt_language",
-                    "English"
-                )
-
-                user_prompt = f"""
-
-Create this in {language}:
+USER IDEA:
 
 {message.text}
 
-Make it ultra professional,
-cinematic,
-highly detailed,
+Make it cinematic,
+ultra detailed,
+high quality,
 AI optimized.
 
 """
 
-            else:
 
-                user_prompt = message.text
+        response = await get_ai_response(
 
+            mode,
 
-            response = await get_ai_response(
+            user_prompt,
 
-                mode,
+            history
 
-                user_prompt,
-
-                history
-
-            )
-
+        )
 
     except Exception as e:
 
@@ -425,7 +433,7 @@ AI optimized.
 
     try:
 
-        await thinking.delete()
+        await wait.delete()
 
     except:
         pass
@@ -450,13 +458,11 @@ AI optimized.
 
 
     history = history[
-        -(MAX_HISTORY_PAIRS * 2):
+        -(MAX_HISTORY * 2):
     ]
 
 
     await state.update_data(
-
-        processing=False,
 
         history=history
 
@@ -469,20 +475,15 @@ AI optimized.
     )
 
 
-    formatted = f"""
-<b>{label}</b>
-
-<pre>{response}</pre>
-"""
-
-
     await message.answer(
 
-        formatted,
+        f"<b>{label}</b>\n\n"
+
+        f"<pre>{response}</pre>",
 
         parse_mode="HTML",
 
         reply_markup=back_to_menu_kb()
 
     )
-
+```
