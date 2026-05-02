@@ -1,15 +1,7 @@
 from aiogram.types import (
-
     InlineKeyboardMarkup,
-
-    InlineKeyboardButton,
-
-    WebAppInfo
-
+    InlineKeyboardButton
 )
-
-
-WEB_APP_URL = "https://azizasadov935-hue.github.io/AzizjonAsaodov/"
 
 
 def main_menu_kb():
@@ -62,14 +54,14 @@ def main_menu_kb():
                     callback_data="mode:chat"
                 )
 
-            ],
+            ]
 
-            [
+        ]
 
-               
-def subscription_kb(
-    channels
-):
+    )
+
+
+def subscription_kb(channels):
 
     buttons = []
 
@@ -185,9 +177,7 @@ def admin_back_kb():
     )
 
 
-def channels_manage_kb(
-    channels
-):
+def channels_manage_kb(channels):
 
     buttons = []
 
