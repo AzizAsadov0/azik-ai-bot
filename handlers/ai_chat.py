@@ -1,4 +1,3 @@
-```python id="aichatv2"
 from aiogram import Router, F
 
 from aiogram.types import (
@@ -486,4 +485,3 @@ AI optimized.
         reply_markup=back_to_menu_kb()
 
     )
-```
