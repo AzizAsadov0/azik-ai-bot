@@ -66,25 +66,7 @@ def main_menu_kb():
 
             [
 
-                InlineKeyboardButton(
-
-                    text="🌐 Open App",
-
-                    web_app=WebAppInfo(
-
-                        url=WEB_APP_URL
-
-                    )
-
-                )
-
-            ]
-
-        ]
-
-    )
-
-
+               
 def subscription_kb(
     channels
 ):
